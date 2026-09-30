@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delta Black — Secure Access Terminal</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/welcome.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/user-dashboard.css">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/panels.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     WELCOME SCREEN
+════════════════════════════════════════════ -->
+<div id="welcome-screen" class="screen active">
+    <div class="welcome-overlay">
+        <div class="welcome-image-container">
+            <img id="welcome-img" src="196478.png" alt="Delta Black">
+        </div>
+        <div class="welcome-text" id="welcome-text-box">
+            <h1 class="glitch" data-text="DELTA BLACK">DELTA BLACK</h1>
+            <p class="subtitle">SECURE ACCESS TERMINAL</p>
+            <button class="btn-enter" id="btn-enter">ENTER SYSTEM</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════ -->
+<div id="login-screen" class="screen">
+    <div class="login-container">
+        <div class="login-header">
+            <h2>Authentication Required</h2>
+            <div class="security-badges">
+                <span class="badge">ENCRYPTED</span>
+                <span class="badge">SECURE</span>
+            </div>
+        </div>
+        <div class="login-form">
+            <div class="input-group">
+                <label for="agent-number">Agent Number</label>
+                <input type="text" id="agent-number" placeholder="Enter Agent Number" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="barcode">BarCODE</label>
+                <input type="password" id="barcode" placeholder="Enter BarCODE" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="nickname">Nickname / Callsign</label>
+                <input type="text" id="nickname" placeholder="Enter Nickname" autocomplete="off">
+            </div>
+            <button class="btn-auth" id="btn-auth">AUTHENTICATE</button>
+            <p id="login-error" class="error-msg"></p>
+        </div>
+        <div class="login-footer">
+            <p>Delta Black Systems — Authorized Personnel Only</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     USER DASHBOARD
+════════════════════════════════════════════ -->
+<div id="user-dashboard" class="screen">
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <span class="nav-logo">◆</span>
+            <span class="nav-title">DELTA BLACK</span>
+        </div>
+        <div class="nav-user">
+            <span id="user-display-name" class="user-name"></span>
+            <button class="btn-menu" id="btn-user-menu">☰</button>
+        </div>
+    </nav>
+
+    <!-- User Dropdown Menu -->
+    <div id="user-menu" class="dropdown-menu hidden">
+        <div class="menu-header">
+            <span id="menu-user-name"></span>
+            <span id="menu-agent-number"></span>
+        </div>
+        <div class="menu-items">
+            <button class="menu-item-btn" id="btn-user-direct-messages">
+                💬 Direct Messages
+                <span class="unread-badge hidden" id="user-dm-badge">0</span>
+            </button>
+            <button class="menu-item-btn" id="btn-user-alerts">
+                ⚠ Alerts
+                <span class="unread-badge hidden" id="user-alert-badge">0</span>
+            </button>
+            <button class="menu-item-btn" id="btn-user-history">📋 Question History</button>
+            <button class="menu-item-btn" id="btn-user-mydata">🗂 My Data</button>
+        </div>
+        <button class="btn-logout" id="btn-user-logout">LOGOUT</button>
+    </div>
+
+    <main class="dashboard-main">
+        <div class="welcome-banner">
+            <h2 id="welcome-message">Welcome, Agent</h2>
+            <p id="welcome-subtitle">Awaiting directives...</p>
+        </div>
+        <div id="qa-container" class="qa-interface">
+            <div id="question-display" class="question-card">
+                <div class="question-status">
+                    <span id="question-counter"></span>
+                    <span id="question-type" class="type-badge">STANDBY</span>
+                </div>
+                <div id="question-content" class="question-content">
+                    <p class="no-questions">No active directives at this time. Stand by.</p>
+                </div>
+            </div>
+            <div id="answer-section" class="answer-section hidden">
+                <textarea id="user-answer" placeholder="Enter your response..."></textarea>
+                <button class="btn-submit" id="btn-submit-answer">SUBMIT RESPONSE</button>
+            </div>
+            <div id="waiting-message" class="waiting-message">
+                <div class="spinner"></div>
+                <p>Awaiting next directive from Command...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- User: Question History Overlay -->
+    <div id="user-history-overlay" class="overlay-panel hidden">
+        <div class="overlay-header">
+            <h3>Question History</h3>
+            <button class="overlay-close" data-close="user-history-overlay">✕</button>
+        </div>
+        <div id="user-history-list" class="overlay-body"></div>
+    </div>
+
+    <!-- User: My Data Overlay -->
+    <div id="user-mydata-overlay" class="overlay-panel hidden">
+        <div class="overlay-header">
+            <h3>My Data</h3>
+            <button class="overlay-close" data-close="user-mydata-overlay">✕</button>
+        </div>
+        <div id="user-mydata-content" class="overlay-body"></div>
+    </div>
+
+    <!-- User: Direct Messages Overlay -->
+    <div id="agent-dm-overlay" class="overlay-panel hidden">
+        <div class="overlay-header">
+            <h3>💬 Messages from Command</h3>
+            <button class="overlay-close" data-close="agent-dm-overlay">✕</button>
+        </div>
+        <div id="agent-dm-messages" class="overlay-body dm-thread"></div>
+        <div class="dm-compose">
+            <textarea id="agent-dm-reply" placeholder="Reply to Command..."></textarea>
+            <button class="btn-primary" id="btn-agent-dm-reply">SEND REPLY</button>
+        </div>
+    </div>
+
+    <!-- User: Alerts Overlay -->
+    <div id="agent-alerts-overlay" class="overlay-panel hidden">
+        <div class="overlay-header">
+            <h3>⚠ Alerts from Command</h3>
+            <button class="overlay-close" data-close="agent-alerts-overlay">✕</button>
+        </div>
+        <div id="agent-alerts-list" class="overlay-body"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADMIN DASHBOARD
+════════════════════════════════════════════ -->
+<div id="admin-dashboard" class="screen">
+    <nav class="top-nav admin-nav">
+        <div class="nav-brand">
+            <span class="nav-logo">◆</span>
+            <span class="nav-title">ADMIN CONSOLE — DELTA BLACK</span>
+        </div>
+        <div class="nav-user">
+            <span class="admin-badge">ADMIN</span>
+            <span id="admin-display-name" class="user-name"></span>
+            <button class="btn-menu" id="btn-admin-menu">☰</button>
+        </div>
+    </nav>
+
+    <!-- Admin Dropdown Menu -->
+    <div id="admin-menu" class="dropdown-menu hidden">
+        <div class="menu-header admin-header">
+            <span>Delta Black</span><span>Agent 001</span>
+        </div>
+        <div class="menu-items">
+            <button class="menu-item-btn" id="btn-admin-direct-messages">💬 Direct Messages</button>
+            <button class="menu-item-btn" id="btn-admin-alerts">⚠ Send Alert</button>
+            <button class="menu-item-btn" id="btn-admin-userdata">🗂 User Data</button>
+        </div>
+        <button class="btn-logout" id="btn-admin-logout">LOGOUT</button>
+    </div>
+
+    <main class="admin-main">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-section">
+                <h3>Active Agents</h3>
+                <div id="agents-list" class="agents-list"></div>
+            </div>
+        </aside>
+
+        <!-- Workspace -->
+        <div class="admin-workspace">
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="questions">Questions</button>
+                <button class="tab-btn" data-tab="users">Agents</button>
+                <button class="tab-btn" data-tab="content">Content</button>
+                <button class="tab-btn" data-tab="responses">Responses</button>
+                <button class="tab-btn" data-tab="activity">Activity</button>
+                <button class="tab-btn" data-tab="dustbin">🗑 Dustbin</button>
+            </div>
+
+            <!-- ── TAB: Questions ── -->
+            <div id="tab-questions" class="tab-content active">
+                <div class="section-header">
+                    <h3>Send Directive</h3>
+                    <div class="delivery-mode">
+                        <label>Delivery:</label>
+                        <select id="delivery-mode">
+                            <option value="sequential">One at a Time</option>
+                            <option value="list">All at Once</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="question-builder">
+                    <div class="target-select">
+                        <label>Target Agent(s):</label>
+                        <select id="target-agent" multiple>
+                            <option value="all">All Agents</option>
+                        </select>
+                        <span class="hint">Hold Ctrl/Cmd to select multiple</span>
+                    </div>
+                    <div class="question-type-select">
+                        <label>Type:</label>
+                        <select id="question-type-select">
+                            <option value="text">Text Question</option>
+                            <option value="poll">Poll</option>
+                            <option value="mc">Multiple Choice</option>
+                            <option value="batch">Batch / List</option>
+                            <option value="mixed">Mixed Media</option>
+                            <option value="image">Image Only</option>
+                            <option value="video">Video Only</option>
+                            <option value="audio">Audio Only</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Deadline (minutes, optional):</label>
+                        <input type="number" id="question-deadline" placeholder="e.g. 30 (leave blank for none)" min="1">
+                    </div>
+
+                    <!-- Text input -->
+                    <div id="text-input-group" class="input-group">
+                        <label>Question / Message:</label>
+                        <textarea id="admin-question-text" placeholder="Enter question or message..."></textarea>
+                    </div>
+
+                    <!-- Poll input -->
+                    <div id="poll-input-group" class="input-group hidden">
+                        <label>Poll Question:</label>
+                        <textarea id="poll-question-text" placeholder="What do you want to ask?"></textarea>
+                        <label>Options:</label>
+                        <div id="poll-options-container"></div>
+                        <button class="btn-secondary" id="btn-add-poll-option">+ Add Option</button>
+                    </div>
+
+                    <!-- Multiple Choice input -->
+                    <div id="mc-input-group" class="input-group hidden">
+                        <label>Question:</label>
+                        <textarea id="mc-question-text" placeholder="Multiple choice question..."></textarea>
+                        <label>Options: <small>(select radio for correct answer)</small></label>
+                        <div id="mc-options-container"></div>
+                        <button class="btn-secondary" id="btn-add-mc-option">+ Add Option</button>
+                    </div>
+
+                    <!-- Batch input -->
+                    <div id="batch-input-group" class="input-group hidden">
+                        <label>Questions (one per line):</label>
+                        <textarea id="batch-questions-text" placeholder="Question 1&#10;Question 2&#10;Question 3" rows="6"></textarea>
+                    </div>
+
+                    <!-- File input -->
+                    <div id="file-input-group" class="input-group hidden">
+                        <label>Upload File (image, video, audio, PDF, any file):</label>
+                        <input type="file" id="media-upload" accept="*/*">
+                        <div id="upload-file-info" class="upload-file-info"></div>
+                        <div id="media-preview" class="media-preview"></div>
+                        <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
+                            <div class="upload-progress-track">
+                                <div id="upload-progress-bar" class="upload-progress-bar" style="width:0%"></div>
+                            </div>
+                            <span id="upload-progress-label" class="upload-progress-label">0%</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="btn-send-question">TRANSMIT DIRECTIVE</button>
+                </div>
+                <div class="sent-questions">
+                    <h4>Sent Directives</h4>
+                    <div id="sent-questions-list" class="questions-list"></div>
+                </div>
+            </div>
+
+            <!-- ── TAB: Agents ── -->
+            <div id="tab-users" class="tab-content">
+                <div class="section-header">
+                    <h3>Agent Management</h3>
+                    <button class="btn-secondary" id="btn-show-add-user">+ Register Agent</button>
+                </div>
+                <div id="add-user-form" class="form-panel hidden">
+                    <h4>New Agent Registration</h4>
+                    <div class="input-group">
+                        <label>Agent Number:</label>
+                        <input type="text" id="new-agent-number" placeholder="e.g. 002">
+                    </div>
+                    <div class="input-group">
+                        <label>BarCODE:</label>
+                        <input type="text" id="new-barcode" placeholder="Assign BarCODE">
+                    </div>
+                    <div class="input-group">
+                        <label>Nickname:</label>
+                        <input type="text" id="new-nickname" placeholder="Agent callsign">
+                    </div>
+                    <button class="btn-primary" id="btn-add-user">REGISTER AGENT</button>
+                    <button class="btn-cancel" id="btn-cancel-add-user">CANCEL</button>
+                </div>
+                <div class="users-table-container">
+                    <table id="users-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Agent #</th><th>Nickname</th><th>BarCODE</th>
+                                <th>Status</th><th>Progress</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── TAB: Content ── -->
+            <div id="tab-content" class="tab-content">
+                <div class="section-header"><h3>Update Agent Data</h3></div>
+                <div class="content-forms">
+                    <div class="form-card">
+                        <h4>Update Profile</h4>
+                        <select id="profile-target" class="agent-select"></select>
+                        <textarea id="profile-content" placeholder="Profile information..."></textarea>
+                        <button class="btn-primary" id="btn-update-profile">UPDATE</button>
+                    </div>
+                    <div class="form-card">
+                        <h4>Assign Grade</h4>
+                        <select id="grade-target" class="agent-select"></select>
+                        <input type="text" id="grade-value" placeholder="Grade (e.g. A+, 95%, Pass)">
+                        <textarea id="grade-notes" placeholder="Notes..."></textarea>
+                        <button class="btn-primary" id="btn-assign-grade">ASSIGN</button>
+                    </div>
+                    <div class="form-card">
+                        <h4>Set Level</h4>
+                        <select id="level-target" class="agent-select"></select>
+                        <input type="text" id="level-value" placeholder="Level (e.g. Level 3)">
+                        <button class="btn-primary" id="btn-set-level">SET LEVEL</button>
+                    </div>
+                    <div class="form-card">
+                        <h4>Award Badge</h4>
+                        <select id="badge-target" class="agent-select"></select>
+                        <input type="text" id="badge-name" placeholder="Badge Name">
+                        <input type="text" id="badge-icon" placeholder="Icon (emoji)">
+                        <button class="btn-primary" id="btn-award-badge">AWARD</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TAB: Responses ── -->
+            <div id="tab-responses" class="tab-content">
+                <div class="section-header">
+                    <h3>Agent Responses</h3>
+                    <select id="response-filter"><option value="all">All Agents</option></select>
+                </div>
+                <div id="responses-list" class="responses-list"></div>
+            </div>
+
+            <!-- ── TAB: Activity ── -->
+            <div id="tab-activity" class="tab-content">
+                <div class="section-header">
+                    <h3>Activity Log</h3>
+                </div>
+                <div class="activity-controls">
+                    <select id="activity-agent-filter"><option value="all">All Agents</option></select>
+                    <input type="text" id="activity-search" placeholder="Search events...">
+                </div>
+                <div id="activity-list" class="activity-list"></div>
+            </div>
+
+            <!-- ── TAB: Dustbin ── -->
+            <div id="tab-dustbin" class="tab-content">
+                <div class="section-header">
+                    <h3>🗑 Dustbin</h3>
+                    <button class="btn-cancel" onclick="DB_Dustbin.clearAll()">Empty All</button>
+                </div>
+                <div class="dustbin-controls">
+                    <select id="dustbin-type-filter" onchange="DB_Dustbin.load()">
+                        <option value="all">All Types</option>
+                        <option value="question">Questions</option>
+                        <option value="response">Responses</option>
+                        <option value="activity">Activity</option>
+                        <option value="userdata">User Data</option>
+                        <option value="user">Users</option>
+                    </select>
+                </div>
+                <div id="dustbin-list" class="dustbin-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ── ADMIN: Direct Messages Full Screen ── -->
+    <div id="admin-dm-overlay" class="dm-fullscreen hidden">
+
+        <!-- LEFT PANEL: Agent list + search -->
+        <div class="dm-left-panel">
+            <div class="dm-left-header">
+                <span class="dm-left-title">💬 MESSAGES</span>
+                <button class="dm-close-btn" onclick="DB_Messages.closeAdminPanel()">✕</button>
+            </div>
+            <div class="dm-search-box">
+                <input type="text" id="dm-agent-search" placeholder="Search by name, number or BarCODE..." oninput="DB_Messages.searchAgents()">
+            </div>
+            <div id="admin-dm-agent-list" class="dm-agent-list"></div>
+        </div>
+
+        <!-- RIGHT PANEL: Chat thread -->
+        <div class="dm-right-panel">
+
+            <!-- No agent selected state -->
+            <div id="dm-no-selection" class="dm-no-selection">
+                <div class="dm-no-selection-icon">💬</div>
+                <p>Select an agent to view conversation</p>
+            </div>
+
+            <!-- Active thread -->
+            <div id="admin-dm-thread" class="dm-thread-panel hidden">
+
+                <!-- Thread header -->
+                <div class="dm-thread-header">
+                    <button class="dm-back-btn" onclick="DB_Messages.backToList()">← Back</button>
+                    <div class="dm-thread-agent-info">
+                        <div class="dm-thread-avatar">◆</div>
+                        <div>
+                            <div id="dm-thread-title" class="dm-thread-name"></div>
+                            <div id="dm-thread-status" class="dm-thread-status"></div>
+                        </div>
+                    </div>
+                    <div class="dm-thread-actions">
+                        <button class="dm-action-btn" onclick="DB_Messages.clearChat()" title="Clear Chat">🗑 Clear</button>
+                    </div>
+                </div>
+
+                <!-- Messages area -->
+                <div id="dm-thread-messages" class="dm-messages-area"></div>
+
+                <!-- Compose area -->
+                <div class="dm-compose-area">
+                    <!-- File attachment preview -->
+                    <div id="dm-file-preview" class="dm-file-preview hidden"></div>
+                    <div class="dm-compose-row">
+                        <label class="dm-attach-btn" title="Attach file">
+                            📎
+                            <input type="file" id="dm-file-input" accept="*/*" style="display:none" onchange="DB_Messages.handleFileAttach()">
+                        </label>
+                        <textarea id="admin-dm-compose" class="dm-compose-input" placeholder="Type a message..." rows="1" onkeydown="DB_Messages.onComposeKeydown(event)"></textarea>
+                        <button class="dm-send-btn" id="btn-send-admin-dm" onclick="DB_Messages.sendAdminMessage()">➤</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ADMIN: Alerts Overlay ── -->
+    <div id="admin-alerts-overlay" class="overlay-panel hidden">
+        <div class="overlay-header">
+            <h3>⚠ Broadcast Alert</h3>
+            <button class="overlay-close" data-close="admin-alerts-overlay">✕</button>
+        </div>
+        <div class="overlay-body">
+            <div class="form-card">
+                <div class="input-group">
+                    <label>Target:</label>
+                    <select id="alert-target" multiple>
+                        <option value="all">All Agents</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Alert Title:</label>
+                    <input type="text" id="alert-title" placeholder="Alert subject...">
+                </div>
+                <div class="input-group">
+                    <label>Message:</label>
+                    <textarea id="alert-body" placeholder="Alert message..."></textarea>
+                </div>
+                <button class="btn-primary" id="btn-send-alert">BROADCAST ALERT</button>
+            </div>
+            <h4 style="padding:1rem 0 0.5rem;color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:0.8rem;">SENT ALERTS</h4>
+            <div id="sent-alerts-list"></div>
+        </div>
+    </div>
+
+    <!-- ── ADMIN: User Data Overlay ── -->
+    <div id="userdata-overlay" class="overlay-panel hidden">
+        <div class="overlay-header">
+            <h3>🗂 User Data</h3>
+            <button class="overlay-close" data-close="userdata-overlay">✕</button>
+        </div>
+        <div class="userdata-controls">
+            <select id="userdata-agent-select"></select>
+            <input type="text" id="userdata-search" placeholder="Search data...">
+        </div>
+        <div id="userdata-list" class="overlay-body"></div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/welcome.js"></script>
+<script src="js/login.js"></script>
+<script src="js/user-dashboard.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/users.js"></script>
+<script src="js/content-manager.js"></script>
+<script src="js/responses.js"></script>
+<script src="js/messages.js"></script>
+<script src="js/alerts.js"></script>
+<script src="js/activity.js"></script>
+<script src="js/userdata.js"></script>
+<script src="js/dustbin.js"></script>
+<script src="js/admin-dashboard.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
